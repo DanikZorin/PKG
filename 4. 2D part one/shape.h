@@ -76,6 +76,17 @@ public:
     LineDDA* createClearObj() override;
     LineDDA* createCopy() override;
 };
+class LineStep: public Line{
+    void copy(const LineStep* obj);
+    void buildDots() override;
+public:
+    LineStep(QColor clr = Qt::black);
+    LineStep(int x0,int y0,int x1,int y1, QColor clr = Qt::black);
+    LineStep(const LineStep* obj);
+
+    LineStep* createClearObj() override;
+    LineStep* createCopy() override;
+};
 class LineBresenham: public Line{
     QString getCode() const;
     void copy(const LineBresenham* obj);

@@ -50,16 +50,35 @@ void MyCentral::paintEvent(QPaintEvent*){
 
         int dx = 1;
         int dy = 1;
-        int mxCnt = 25;
+        int mxCnt = 15;
+        int step = 5;
         while (lineXCnt >= mxCnt && lineYCnt >= mxCnt){
-            lineXCnt /= 5;
-            lineYCnt /= 5;
-            dx *= 5;
-            dy *= 5;
+            lineXCnt /= step;
+            lineYCnt /= step;
+            dx *= step;
+            dy *= step;
+        }
+        qreal koef = (qreal)qMin(lineXCnt, lineYCnt) / mxCnt; /// (0;1)
+        if (dx != 1){
+            for (qreal xi = dx*int(xL/dx)-.5*ask; xi<=xR;xi+=dx){
+                for (int i=-step;i<=step;i++){
+                    QColor clr(255*koef,255*koef,255*koef);
+                    LineUtil line(xi+(qreal)i*dx/step,yU,xi+(qreal)i*dx/step,yD,clr);
+                    line.paint(drawReq);
+                }
+            }
+            for (qreal yi = dy*int(yU/dy)+.5*ask; yi<=yD;yi+=dy){
+                for (int i=-step;i<=step;i++){
+                    QColor clr(255*koef,255*koef,255*koef);
+                    LineUtil line(xL,yi+(qreal)i*dy/step,xR,yi+(qreal)i*dy/step,clr);
+                    line.paint(drawReq);
+                }
+            }
         }
         for (qreal xi = dx*int(xL/dx)-.5*ask; xi<=xR;xi+=dx){
             LineUtil line(xi,yU,xi,yD);
             line.paint(drawReq);
+
             p.begin(this);
 
             p.drawText(screenCntr.width()/2 + (xi+0.5*ask+drawReq.xCntr)*scaleKoef + drawReq.xAskew-10,
@@ -67,6 +86,7 @@ void MyCentral::paintEvent(QPaintEvent*){
             p.end();
         }
         for (qreal yi = dy*int(yU/dy)+.5*ask; yi<=yD;yi+=dy){
+
             LineUtil line(xL,yi,xR,yi);
             line.paint(drawReq);
             p.begin(this);

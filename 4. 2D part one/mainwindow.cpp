@@ -67,6 +67,10 @@ MainWindow::MainWindow(QWidget *parent)
     menuTools->addAction(actionDot);
     connect(actionDot, &QAction::triggered, [=](){setTool(new Dot());});
 
+    QAction* actionStep = new QAction("Линия пошаговая");
+    menuTools->addAction(actionStep);
+    connect(actionStep, &QAction::triggered, [=](){setTool(new LineStep());});
+
     QAction* actionDDA = new QAction("Линия DDA");
     menuTools->addAction(actionDDA);
     connect(actionDDA, &QAction::triggered, [=](){setTool(new LineDDA());});

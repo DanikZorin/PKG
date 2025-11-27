@@ -175,11 +175,16 @@ void LineDDA::buildDots(){
     int dy = y1-y0;
 
     int n = qMax(qAbs(dx),qAbs(dy));
+    if (n == 0)
+        return ;
 
-    for (int t=0;t<=n;t++){
-        int x = qRound(x0+(qreal)t/n*dx);
-        int y = qRound(y0+(qreal)t/n*dy);
-        dots.push_back(new Dot(x,y,clr));
+    qreal x_ = x0;
+    qreal y_ = y0;
+    dots.push_back(new Dot(x_,y_,clr));
+    for (int t=0;t<n;t++){
+        x_ += (qreal)dx/n;
+        y_ += (qreal)dy/n;
+        dots.push_back(new Dot(qRound(x_),qRound(y_),clr));
     }
 }
 
@@ -191,6 +196,52 @@ void LineDDA::copy(const LineDDA* obj){
 }
 LineDDA* LineDDA::createCopy(){
     return new LineDDA(this);
+}
+LineStep::LineStep(QColor clr): Line(clr){
+    name = "Линия пошаговый";
+}
+LineStep::LineStep(int x0,int y0,int x1,int y1, QColor clr): Line(x0,y0,x1,y1,clr){
+    buildDots();
+    name = "Линия пошаговый";
+}
+LineStep::LineStep(const LineStep* obj): LineStep(){
+    copy(obj);
+}
+
+void LineStep::buildDots(){
+    if (x1 == x0 && y0 == y1){
+        return;
+    }
+
+    if (qAbs(x1-x0) > qAbs(y1-y0)){
+        qreal k = (qreal)(y1-y0)/(x1-x0);
+        qreal b = y0 - k*x0;
+
+
+        for (int x=qMin(x0,x1);x<=qMax(x0,x1);x++){
+            dots.push_back(new Dot(x,qRound(k*x+b),clr));
+        }
+    }
+    else{
+        qreal k = (qreal)(x1-x0)/(y1-y0);
+        qreal b = x0 - k*y0;
+
+
+        for (int y=qMin(y0,y1);y<=qMax(y0,y1);y++){
+            dots.push_back(new Dot(qRound(k*y+b),y,clr));
+        }
+
+    }
+}
+
+LineStep* LineStep::createClearObj(){
+    return new LineStep();
+}
+void LineStep::copy(const LineStep* obj){
+    Line::copy(obj);
+}
+LineStep* LineStep::createCopy(){
+    return new LineStep(this);
 }
 
 LineBresenham::LineBresenham(QColor clr): Line(clr){
@@ -337,7 +388,7 @@ QString LineCastla::getCode() const{
         return code;
 
     }
-    while (dx!=dy && dx*dy){
+    while (dx!=dy){
         if (dy>dx){
             QString m1Rev = m1;
             std::reverse(m1Rev.begin(), m1Rev.end());
@@ -351,13 +402,13 @@ QString LineCastla::getCode() const{
             dx -= dy;
         }
     }
-    /// dx==dy;
-    QString m2Rev = m2;
-    std::reverse(m2Rev.begin(), m2Rev.end());
-    m2 = m1 + m2Rev;
+    // dx==dy;
+    QString m1Rev = m1;
+    std::reverse(m1Rev.begin(), m1Rev.end());
+    m1 = m2 + m1Rev;
 
     for (int i=0;i<dx;i++){
-        code+=m2;
+        code+=m1;
     }
 
     return code;
