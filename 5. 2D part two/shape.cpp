@@ -98,8 +98,8 @@ void Polygon::checkRegularity(){
     }
 
     xMx = qMax(qMax(points[0].x(),points[1].x()),qMax(points[2].x(),points[3].x()));
+    xMn = (points[0].x()+points[1].x()+points[2].x()+points[3].x())/2-xMx;
     yMx = qMax(qMax(points[0].y(),points[1].y()),qMax(points[2].y(),points[3].y()));
-    xMn = qMin(qMin(points[0].x(),points[1].x()),qMin(points[2].x(),points[3].x()));
     yMn = qMin(qMin(points[0].y(),points[1].y()),qMin(points[2].y(),points[3].y()));
 
     isReagularWindow = true;
@@ -127,9 +127,10 @@ bool Polygon::isLeft() const{
             Vector v0(p[(i-1+points.size())%points.size()],p[i]);
             Vector v1(p[i], p[i+1]);
 
-            if (VectorMult(v0,v1) > 0) dOct[i] = 4;
-            if (VectorMult(v0,v1) == 0) dOct[i] = 0;
-            if (VectorMult(v0,v1) < 0) dOct[i] = -4;
+            qreal val = vectorMult(v0,v1);
+            if (val > 0) dOct[i] = 4;
+            if (val == 0) dOct[i] = 0;
+            if (val < 0) dOct[i] = -4;
         }
 
     }
@@ -137,8 +138,6 @@ bool Polygon::isLeft() const{
     for (int i=0;i<points.size();i++){
         octSum += dOct[i];
     }
-
-    qDebug()<<octSum;
     return octSum > 0;
 }
 void Polygon::reverse(){
@@ -167,8 +166,9 @@ void Polygon::paint(DrawReq& drawReq){
     QPainter p(drawReq.context);
 
     p.setBrush(clr);
-    p.setPen(QPen(clr, 20*drawReq.zoom));
-
+    QColor clrP = clr;
+    clrP.setAlpha(255);
+    p.setPen(QPen(clrP, 20*drawReq.zoom));
 
     QVector<QPointF> pointsT;
 

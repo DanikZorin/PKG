@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPainter>
 #include <shape.h>
+#include <stack>
 #include <QMouseEvent>
 class MyCentral : public QWidget
 {
@@ -25,6 +26,8 @@ public:
     void Koen();
     void Barsky();
     void Hodgeman();
+    void extracted(qreal &xGl, qreal &yGl);
+    void Nickolla();
 
     void paintEvent(QPaintEvent *) override;
     void myMouseMoveEvent(QMouseEvent*);

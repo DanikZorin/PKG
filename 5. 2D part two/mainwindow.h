@@ -19,6 +19,7 @@ public:
     ~MainWindow();
 
     void OpenFile();
+    void clear();
 
     void keyPressEvent(QKeyEvent*) override;
     void wheelEvent(QWheelEvent*) override;

@@ -162,7 +162,6 @@ QPointF getS(QPointF A0,QPointF A1,QPointF C0,QPointF C1){
     */
     qreal t2 = ( (C0.x()-A0.x())*(A1.y()-A0.y())-(C0.y()-A0.y())*(A1.x()-A0.x()) ) / ( (C1.y()-C0.y())*(A1.x()-A0.x()) - (C1.x()-C0.x())*(A1.y()-A0.y()) );
     QPointF s = C0 + t2*(C1-C0);
-    qDebug()<<A0<<A1<<C0<<C1<<s<<t2;
     return s;
 }
 void MyCentral::Hodgeman(){
@@ -179,15 +178,14 @@ void MyCentral::Hodgeman(){
 
             QVector<QPointF> a = polygon->points;
             for (int k=0;k<cutter->points.size();k++){
-                qDebug()<<k;
                 QVector<QPointF> a_;
 
                 Vector v1(c[k],c[k+1]);
                 Vector v2(c[k],a[0]);
-                bool V = (VectorMult(v1,v2)>=0);
+                bool V = (vectorMult(v1,v2)>=0);
                 for (int i=0;i<a.size();i++){
                     Vector v3(c[k],a[(i+1)%a.size()]);
-                    bool V_ = (VectorMult(v1,v3)>=0);
+                    bool V_ = (vectorMult(v1,v3)>=0);
 
                     if (V && V_)
                         a_.push_back(a[(i+1)%a.size()]);
@@ -205,6 +203,268 @@ void MyCentral::Hodgeman(){
                 }
             }
             cutted.push_back(new Polygon(a, cutClr));
+        }
+    }
+
+
+    update();
+}
+
+void MyCentral::Nickolla(){
+    cutted.clear();
+    if (!(cutter && cutter->isReagularWindow))
+        return;
+
+
+
+    void (*fMinusPiHalf)(QPointF& p) = [](QPointF& p){
+        qreal x = p.x();
+        qreal y = p.y();
+        p.setX(y);
+        p.setY(-x);
+    };
+    void (*fPi)(QPointF& p) = [](QPointF& p){
+        qreal x = p.x();
+        qreal y = p.y();
+        p.setX(-x);
+        p.setY(-y);
+    };
+    void (*fPiHalf)(QPointF& p) = [](QPointF& p){
+        qreal x = p.x();
+        qreal y = p.y();
+        p.setX(-y);
+        p.setY(x);
+    };
+    void (*fxy)(QPointF& p) = [](QPointF& p){
+        qreal x = p.x();
+        qreal y = p.y();
+        p.setX(-y);
+        p.setY(-x);
+    };
+    void (*fx)(QPointF& p) = [](QPointF& p){
+        qreal x = p.x();
+        qreal y = p.y();
+        p.setX(x);
+        p.setY(-y);
+    };
+
+
+    qreal xMn = cutter->xMn;
+    qreal yMn = cutter->yMn;
+    qreal xMx = cutter->xMx;
+    qreal yMx = cutter->yMx;
+
+
+    QPointF C1;
+    QPointF C2;
+    QPointF C3;
+    QPointF C4;
+    QPointF A;
+    QPointF B;
+
+    QPointF Mn = {xMn,yMn};
+    QPointF Mx = {xMx,yMx};
+
+    std::stack<void(*)(QPointF&)> actions;
+
+
+    auto cutHor = [&](qreal y0){
+        QPointF C;
+
+        C.setX(A.x() + (y0-A.y())*(B.x()-A.x())/(B.y()-A.y()));
+        C.setY(y0);
+
+        return C;
+    };
+
+    auto cutVer = [&](qreal x0){
+        QPointF C;
+
+        C.setX(x0);
+        C.setY(A.y() + (x0-A.x())*(B.y()-A.y())/(B.x()-A.x()));
+
+        return C;
+    };
+
+    auto rev = [&](void(*f)(QPointF&)){
+        if (f==fMinusPiHalf)
+            return fPiHalf;
+        if (f==fPiHalf)
+            return fMinusPiHalf;
+        return f;
+    };
+
+    auto t = [&](void(*f)(QPointF&)){
+
+        f(Mn);
+        f(Mx);
+
+        if (Mn.x() > Mx.x()){
+            int x = Mn.x();
+            Mn.setX(Mx.x());
+            Mx.setX(x);
+        }
+        if (Mn.y() > Mx.y()){
+            int y = Mn.y();
+            Mn.setY(Mx.y());
+            Mx.setY(y);
+        }
+
+        C1 = {Mn.x(),Mx.y()};
+        C2 = {Mx.x(),Mx.y()};
+        C3 = {Mn.x(),Mn.y()};
+        C4 = {Mx.x(),Mn.y()};
+
+        f(A);
+        f(B);
+
+        actions.push(rev(f));
+    };
+
+
+    for (Shape* shape: shapes){
+        Line* line;
+        if ((line=dynamic_cast<Line*>(shape)) != nullptr){
+
+            while(actions.size()){
+                actions.pop();
+            }
+            C1 = {xMn, yMx};
+            C2 = {xMx, yMx};
+            C3 = {xMn, yMn};
+            C4 = {xMx, yMn};
+
+            A = line->getStart();
+            B = line->getEnd();
+
+            if (A.x() > Mx.x()){
+                t(fPi);
+            }
+            if (A.x() < Mn.x()){
+                if (B.x() < Mn.x()){
+                    continue;
+                }
+                if (A.y() < Mn.y()){
+                    t(fx);
+                }
+            }
+            if (Mx.x() >= A.x() && A.x() >= Mn.x()){
+                if (A.y() > Mx.y()){
+                    t(fPiHalf);
+                }
+                else if (A.y() < Mn.y()){
+                    t(fMinusPiHalf);
+
+                    if (B.x() < Mn.x()){
+                        continue;
+                    }
+                }
+            }
+
+            if (A.x() < Mn.x() && A.y() > Mx.y() && B.x() >= Mn.x()){
+                // CASE 1
+
+                if (B.y() > Mx.y()){
+                    continue;
+                }
+
+                Vector AC1(A,C1);
+                Vector AB(A,B);
+
+                if (vectorMult(AC1,AB) > 0){
+                    t(fxy);
+                }
+
+                if (B.y() >= Mn.y()){
+                    A = cutVer(Mn.x());
+                    if (B.x() > Mx.x()){
+                        B = cutVer(Mx.x());
+                    }
+                }
+                else{ // B.y() < Mn.y()
+                    Vector AC3(A,C3);
+                    if (vectorMult(AC3,AB)<=0){
+                        continue;
+                    }
+                    if (B.x() > Mx.x()){
+                        Vector AC4(A,C4);
+                        if (vectorMult(AC4,AB)<=0){
+                            B = cutHor(Mn.y());
+                        }
+                        else{
+                            B = cutVer(Mx.x());
+                        }
+                    }
+                    else{
+                        B = cutHor(Mn.y());
+                    }
+                    A = cutVer(Mn.x());
+                }
+            }
+            else if (A.x() < Mn.x() && Mx.y() >= A.y() && A.y() >= Mn.y() && B.x() >= Mn.x()){
+                // CASE 2
+                if (Mx.y() >= B.y() && B.y() >= Mn.y()){
+                    A = cutVer(Mn.x());
+                    if (B.x() > Mx.x()){
+                        B = cutVer(Mx.x());
+                    }
+                }
+                else{
+                    if (B.y() > Mx.y()){
+                        t(fx);
+                    }
+                    Vector AB(A,B);
+                    Vector AC3(A,C3);
+                    if (vectorMult(AC3,AB)<=0){
+                        continue;
+                    }
+
+                    if (B.x() <= Mx.x()){
+                        B = cutHor(Mn.y());
+                    }
+                    else{
+                        Vector AC4(A,C4);
+                        if (vectorMult(AC4,AB)<=0){
+                            B = cutHor(Mn.y());
+                        }
+                        else{
+                            B = cutVer(Mx.x());
+                        }
+                    }
+                    A = cutVer(Mn.x());
+                }
+            }
+            else if (Mx.x() >= A.x() && A.x() >= Mn.x() && Mx.y() >= A.y() && A.y() >= Mn.y()){
+                // CASE 3
+
+                if (B.x() < Mn.x() && B.y() > Mx.y()){
+                    // SUB-CASE 1
+
+                    Vector AB(A,B);
+                    Vector AC1(A,C1);
+
+                    if (vectorMult(AC1,AB) < 0){
+                        B = cutHor(Mx.y());
+                    }
+                    else{
+                        B = cutVer(Mn.x());
+                    }
+                }
+                else if (B.x() < Mn.x() && Mx.y() >= B.y() && B.y() >= Mn.y()){
+                    B = cutVer(Mn.x());
+                }
+            }
+
+            while(actions.size()){
+                auto fRev = actions.top();
+
+                fRev(A);
+                fRev(B);
+
+                actions.pop();
+            }
+
+            cutted.push_back(new Line(A,B, Qt::red));
         }
     }
 
@@ -260,11 +520,11 @@ void MyCentral::paintEvent(QPaintEvent*){
             p.end();
         }
     }
-    if (cutter){
-        cutter->paint(drawReq);
-    }
     for (Shape* shape: shapes){
         shape->paint(drawReq);
+    }
+    if (cutter){
+        cutter->paint(drawReq);
     }
     for (Shape* shape: cutted){
         shape->paint(drawReq);

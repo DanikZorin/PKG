@@ -23,23 +23,7 @@ MainWindow::MainWindow(QWidget *parent)
     QAction* actionClear = new QAction("Стереть");
     menuFile->addAction(actionClear);
     actionClear->setShortcut(Qt::Key_Delete);
-    connect(actionClear, &QAction::triggered, [=](){
-
-        for (Shape* shape: central->shapes){
-            delete shape;
-        }
-        central->shapes.clear();
-        for (Shape* shape: central->cutted){
-            delete shape;
-        }
-        central->cutted.clear();
-
-        if (central->cutter){
-            delete central->cutter;
-            central->cutter = nullptr;
-        }
-        central->update();
-    });
+    connect(actionClear, &QAction::triggered, this, &MainWindow::clear);
 
     QAction* actionUncut = new QAction("Убрать отсечения");
     menuFile->addAction(actionUncut);
@@ -81,6 +65,10 @@ MainWindow::MainWindow(QWidget *parent)
     menuAlgorithm->addAction(actionBarsky);
     connect(actionBarsky, &QAction::triggered, central, &MyCentral::Barsky);
 
+    QAction* actionNickolla = new QAction("Николла-Ли-Николла");
+    menuAlgorithm->addAction(actionNickolla);
+    connect(actionNickolla, &QAction::triggered, central, &MyCentral::Nickolla);
+
     QAction* actionHodgeman = new QAction("Сазерленд-Ходжман");
     menuAlgorithm->addAction(actionHodgeman);
     connect(actionHodgeman, &QAction::triggered, central, &MyCentral::Hodgeman);
@@ -98,16 +86,29 @@ MainWindow::MainWindow(QWidget *parent)
     setMouseTracking(true);
     resize(600, 400);
 }
+void MainWindow::clear(){
+    for (Shape* shape: central->shapes){
+        delete shape;
+    }
+    central->shapes.clear();
+    for (Shape* shape: central->cutted){
+        delete shape;
+    }
+    central->cutted.clear();
+
+    if (central->cutter){
+        delete central->cutter;
+        central->cutter = nullptr;
+    }
+    central->update();
+}
+
 #include <fstream>
 void MainWindow::OpenFile(){
     QString fileName = QFileDialog::getOpenFileName(this, "", QDir::homePath(), " *.txt ;; * ");
 
     if (!fileName.isNull()){
-        for (Shape* shape:central->shapes)
-            delete shape;
-        if (central->cutter)
-            delete central->cutter;
-        central->shapes.clear();
+        clear();
 
         std::ifstream fin(fileName.toStdString());
 
@@ -120,7 +121,7 @@ void MainWindow::OpenFile(){
             fin >>name;
             if (name == "Line"){
                 fin >>x0>>y0>>x1>>y1;
-                central->shapes.push_back(new Line(x0, y0, x1, y1));
+                central->shapes.push_back(new Line(x0, y0, x1, y1, Qt::blue));
             }
             else {
                 int m;
@@ -132,7 +133,7 @@ void MainWindow::OpenFile(){
                     fin >>x>>y;
                     points[i] = {x,y};
                 }
-                central->shapes.push_back(new Polygon(points));
+                central->shapes.push_back(new Polygon(points, Qt::blue));
             }
         }
         int m;
@@ -144,7 +145,7 @@ void MainWindow::OpenFile(){
             fin >>x>>y;
             points[i] = {x,y};
         }
-        central->cutter = new Polygon(points, Qt::blue);
+        central->cutter = new Polygon(points, QColor(0,0,0,100));
 
         central->update();
     }

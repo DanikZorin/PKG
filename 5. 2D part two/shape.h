@@ -47,7 +47,7 @@ class Polygon: public Shape{
 
     bool isLeft() const;
 public:
-    int xMn, xMx, yMn, yMx;
+    qreal xMn, xMx, yMn, yMx;
     QVector<QPointF> points;
     bool isReagularWindow;
     Polygon(QColor clr = Qt::black);

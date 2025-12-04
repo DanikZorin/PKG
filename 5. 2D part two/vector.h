@@ -42,7 +42,7 @@ public:
     bool operator !=(const Vector&) const;
 
     friend double scalarMult(const Vector& a, const Vector& b);
-    friend double VectorMult(const Vector& a, const Vector& b);
+    friend double vectorMult(const Vector& a, const Vector& b);
 };
 
 #endif // VECTOR_H

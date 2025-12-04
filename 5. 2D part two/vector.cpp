@@ -121,6 +121,6 @@ bool Vector::operator!=(const Vector& obj) const{
 double scalarMult(const Vector& a, const Vector& b){
     return a*b;
 }
-double VectorMult(const Vector& a, const Vector& b){
+double vectorMult(const Vector& a, const Vector& b){
     return a^b;
 }
