@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/icon">
+        <file>3d-c.ico</file>
+    </qresource>
+</RCC>
